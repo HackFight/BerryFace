@@ -1,23 +1,16 @@
 import socket
-import time
+from time import sleep
 
 # A message must be in this format: [MESSAGE_PREFIX, PAYLOAD_SIZE_LSB, PAYLOAD_SIZE_MSB, CMD, ARGS, ..., CHECKSUM_LSB, CHECKSUM_MSB, MESSAGE_SUFFIX]
 # The prefix and suffix being 0x01 and 0x02 respectively.
 # With 0x01, 0x02, and 0x03 being reserved. If they need to be used, masking must be done.
 #
 # Masking is done by changing the reserved byte to the pair [0x03, byte + 3]
-# e.g. 0x01 in the payload must be replaced by [0x03, 0x04]
+# e.g. 0x01 in the PAYLOAD must be replaced by [0x03, 0x04], the checksum should NOT be masked!!!
 #
 # The checksum is the addition of all the bytes of the payload
 #
-# Modes:
-# 0x00 = Clock
-# 0x01 = Temp
-# 0x02 = Anim
-# 0x03 = Graph
-# 0x04 = Image
-# 0x05 = Stopwatch
-# 0x06 = Scoreboard
+# It is important to wait for a tiny amount of time before sending commands after connection
 
 MESSAGE_PREFIX = 0x01
 MESSAGE_SUFFIX = 0x02
@@ -31,23 +24,13 @@ class TimeboxEvo():
 
     def connect(self):
         self.bt_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        self.bt_socket.settimeout(10)  # Set timeout for connection
-        
-        if self.verbose:
-            print(f"[Server]: Trying to connect to Timebox[{self.client_mac_addr}]")
-
         self.bt_socket.connect((self.client_mac_addr, 1))
-        
-        if self.verbose:
-            print("[Server]: Connected to Timebox")
-        
-        time.sleep(0.5)
+        sleep(0.5)
 
     def disconnect(self):
         if self.bt_socket:
+            sleep(0.5)
             self.bt_socket.close()
-            if self.verbose:
-                print("[Server]: Disconnected from Timebox")
     
     def is_connected(self):
         try:
@@ -68,7 +51,7 @@ class TimeboxEvo():
 
         self.bt_socket.send(bytes(data))
     
-    def recv_response(self, timeout=2.0):
+    def recv_response(self, timeout=2):
         old_timeout = self.bt_socket.gettimeout()
         self.bt_socket.settimeout(timeout)
         
@@ -95,13 +78,10 @@ class TimeboxEvo():
         return None
 
     def set_rgb(self, r, g, b):
-        return self.send(0x6f, [r & 0xff, g & 0xff, b & 0xff])
+        return self.send(0x6f, [r & 0xff, g & 0xff, b & 0xff], False)
     
     def set_brightness(self, level):
-        return self.send(0x74, [level & 0xff])
-    
-    def set_mode(self, mode):
-        return self.send(0x45, [mode & 0xff])
+        return self.send(0x74, [level & 0xff], False)
 
 def mask(data):
     result = []
@@ -134,9 +114,9 @@ def encode_payload(payload):
 
     final_payload_header = [final_payload_size & 0xff, (final_payload_size >> 8) & 0xff]
     cs = checksum(final_payload_header + payload)
-    final_payload_suffix = [cs & 0xff, (cs >> 8) & 0xff]
+    rearanged_checksum = [cs & 0xff, (cs >> 8) & 0xff]
 
-    return [MESSAGE_PREFIX] + mask(final_payload_header + payload + final_payload_suffix) + [MESSAGE_SUFFIX]
+    return [MESSAGE_PREFIX] + mask(final_payload_header + payload) + rearanged_checksum + [MESSAGE_SUFFIX]
 
 def print_data(message, label="DATA"):
     if isinstance(message, bytes):
