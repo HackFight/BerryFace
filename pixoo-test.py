@@ -12,4 +12,4 @@ berry = Pixoo(TIMEBOX_MAC_ADDR)
 
 berry.connect()
 
-berry.set_color(0, 0, 255)
+berry.draw_gif("./test.gif")

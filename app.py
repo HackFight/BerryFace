@@ -13,8 +13,8 @@ assert TIMEBOX_MAC_ADDR is not None, print("Is the .env correctly setup?")
 berry_face = TimeboxEvo(TIMEBOX_MAC_ADDR)
 berry_face.connect()
 
-berry_face.set_rgb(255, 0, 255)
+berry_face.draw_pic("./berry.png")
 
-berry_face.disconnect()
+# berry_face.disconnect()
 
 # Command [45 00 ff ff] shows a dark analog clock for some reason???

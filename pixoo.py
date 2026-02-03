@@ -80,8 +80,8 @@ class Pixoo(object):
     """
     spp_frame = self.__spp_frame_encode(cmd, args)
     if self.btsock is not None:
-      nb_sent = self.btsock.send(bytes(spp_frame))
       print_data(spp_frame)
+      nb_sent = self.btsock.send(bytes(spp_frame))
 
 
   def set_system_brightness(self, brightness):
@@ -147,8 +147,8 @@ class Pixoo(object):
       for i in pixels:
         encoded_byte = bin(i)[2:].rjust(bitwidth, '0') + encoded_byte
         if len(encoded_byte) >= 8:
-            encoded_pixels.append(encoded_byte[-8:])
-            encoded_byte = encoded_byte[:-8]
+          encoded_pixels.append(encoded_byte[-8:])
+          encoded_byte = encoded_byte[:-8]
       encoded_data = [int(c, 2) for c in encoded_pixels]
       encoded_palette = []
       for r,g,b in palette:
